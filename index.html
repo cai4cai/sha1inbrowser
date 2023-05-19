@@ -2,26 +2,63 @@
 <html>
 <head>
    <meta charset="UTF-8">
-   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Compute SHA-1 from CSV in browser</title>
 </head>
 <body>
    <form id="myForm">
       <input type="file" id="csvFile" accept=".csv" />
       <br />
-      <input type="submit" value="Submit" />
+      <input type="submit" value="Process" />
    </form>
+   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+   <script>
+      async function sha1(str) {
+         const enc = new TextEncoder();
+         const hash = await crypto.subtle.digest('SHA-1', enc.encode(str));
+         return Array.from(new Uint8Array(hash))
+            .map(v => v.toString(16).padStart(2, '0'))
+            .join('');
+      }
+   </script>
+   <script>
+      function download(dataurl, filename) {
+         const link = document.createElement("a");
+         link.href = dataurl;
+         link.download = filename;
+         link.click();
+      }
+   </script>
    <script>
       const myForm = document.getElementById("myForm");
       const csvFile = document.getElementById("csvFile");
+
       myForm.addEventListener("submit", function (e) {
          e.preventDefault();
          const input = csvFile.files[0];
          const reader = new FileReader();
-         reader.onload = function (e) {
+
+         // 👇 executed when a file is loaded
+         reader.onload = async function (e) {
+            // 👇 get the text from CSV file
             const text = e.target.result;
-            document.write(text);
+
+            // 👇 parse it using D3.js
+            const data = d3.csvParse(text);
+
+            for (var i = 0; i < data.length; i++) {
+               stringtohash = data[i]["Col A"] + data[i]["Col B"] + data[i]["Col C"]; 
+               console.log("Hashing: " + stringtohash);
+               hash = await sha1(data[i]["Col A"]);
+               console.log("SHA-1: " + hash);
+
+               data[i]["Hash"] = hash;
+            }
+
+            var csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));;
+            download(csvContent, "parsedcsv.csv");
          };
+
+         // 👇 load the input file to the reader
          reader.readAsText(input);
       });
    </script>
