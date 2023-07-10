@@ -8,6 +8,9 @@
          border: 1px solid black;
          border-collapse: collapse;
       }
+      #options {
+         display: none;
+      }
    </style>
 </head>
 <body>
@@ -17,15 +20,20 @@
       <br />
       <input type="submit" value="Process" />
    </form>
-   <h1>Raw data preview</h1>
-   <p id="previewLbl">Showing 0 of 0</p>
-   <table id="previewTable">
-      <tr>
-         <th>Col A</th>
-         <th>Col B</th>
-         <th>Col C</th>
-      </tr>
-   </table>
+   <div id="options">
+      <h1>Data preview</h1>
+      <p id="previewLbl">Showing 0 of 0</p>
+      <table id="previewTable">
+         <thead>
+            <tr>
+               <th>Col A</th>
+               <th>Col B</th>
+               <th>Col C</th>
+            </tr>
+         </thead>
+         <tbody id="previewTableBody"></tbody>
+      </table>
+   </div>
    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
    <script>
       async function sha1(str) {
@@ -42,6 +50,15 @@
          link.href = dataurl;
          link.download = filename;
          link.click();
+      }
+
+      function setOptionsVisible(visible) {
+         document.getElementById("options").style.display = (visible ? "block" : "none");
+      }
+
+      function clearTable() {
+         const table = document.getElementById("previewTable");
+         table.tBodies[0].innerHTML = "";
       }
    </script>
    <script>
@@ -82,6 +99,12 @@
          const input = csvFile.files[0];
          const reader = new FileReader();
 
+         setOptionsVisible(input != null);
+         if (input == null) {
+            clearTable();
+            return;
+         }
+
          // 👇 executed when a file is loaded
          reader.onload = async function (e) {
             // 👇 get the text from CSV file
@@ -91,15 +114,15 @@
             const data = d3.csvParse(text);
 
             // Get object for preview table
-            const previewTable = document.getElementById("previewTable");
+            const previewTableBody = document.getElementById("previewTableBody");
 
             // Add rows to preview table
             const toShow = Math.min(data.length, 10);
             for (let i = 0; i < toShow; i++) {
-               const row = previewTable.insertRow(i + 1);
-               row.insertCell(0).innerHTML = data[i]["Col A"];
-               row.insertCell(1).innerHTML = data[i]["Col B"];
-               row.insertCell(2).innerHTML = data[i]["Col C"];
+               const row = previewTableBody.insertRow(i);
+               for (let j = 0; j < data.columns.length; j++) {
+                  row.insertCell(j).innerHTML = data[i][data.columns[j]];
+               }
             }
 
             // Show size of dataset
