@@ -57,6 +57,7 @@
 
             // 👇 parse it using D3.js
             const data = d3.csvParse(text);
+            const dataWithHash = d3.csvParse(text);
 
             // Find what to do with each column
             const toHash = [];
@@ -64,10 +65,11 @@
             data.columns.forEach(function(column) {
                const value = document.getElementById("select_" + column).value;
                switch (value) {
-                  case "Hash":
+                  case "Hash and keep":
                      toHash.push(column);
                      break;
-                  case "Exclude":
+                  case "Hash and exclude":
+                     toHash.push(column);
                      toExclude.push(column);
                      break;
                }
@@ -75,18 +77,19 @@
             console.log(toHash);
             console.log(toExclude);
 
-            for (var i = 0; i < data.length; i++) {
+            for (let i = 0; i < data.length; i++) {
                // Concatenate strings for hashing
-               let stringtohash = "";
+               let hashKey = "";
                toHash.forEach(function(column) {
-                  stringtohash += data[i][column];
+                  hashKey += data[i][column];
                })
                // Hash
-               console.log("Hashing: " + stringtohash);
-               hash = await sha1(stringtohash);
+               console.log("Hashing: " + hashKey);
+               let hash = await sha1(hashKey);
                console.log("SHA-1: " + hash);
 
                data[i]["Hash"] = hash;
+               dataWithHash[i]["Hash"] = hash;
 
                // Delete fields in toExclude
                toExclude.forEach(function(column) {
@@ -95,9 +98,12 @@
             }
 
             console.log(data);
+            console.log(dataWithHash);
 
-            var csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));;
-            download(csvContent, "parsedcsv.csv");
+            let csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));
+            let originalCsvWithHash = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(dataWithHash));
+            download(csvContent, "unidentifiable.csv");
+            download(originalCsvWithHash, "original_with_hash.csv");
          };
 
          reader.readAsText(input);
@@ -125,7 +131,7 @@
             const data = d3.csvParse(text);
 
             // Add drop-down for each field
-            const options = ["Keep", "Hash", "Exclude"];
+            const options = ["Keep", "Hash and exclude", "Hash and keep"];
             data.columns.forEach(function(name) {
                // Label
                const label = document.createElement("label");
