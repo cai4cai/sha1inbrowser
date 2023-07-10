@@ -83,7 +83,7 @@
                })
                // Hash
                console.log("Hashing: " + stringtohash);
-               hash = await sha1(data[i]["Col A"]);
+               hash = await sha1(stringtohash);
                console.log("SHA-1: " + hash);
 
                data[i]["Hash"] = hash;
