@@ -7,9 +7,17 @@
       #options {
          display: none;
       }
+      table, th, td {
+         border: 1px solid black;
+         border-collapse: collapse;
+      }
+      #preview {
+         display: none;
+      }
    </style>
 </head>
 <body>
+   <h1>Choose a CSV file</h1>
    <form id="myForm">
       <input type="file" id="csvFile" accept=".csv" />
       <br />
@@ -18,6 +26,20 @@
    <div id="options">
       <h1>Field options</h1>
       <div id="columnBoxes"></div>
+   </div>
+   <div id="preview">
+      <h1>Data preview</h1>
+      <p id="previewLbl">Showing 0 of 0</p>
+      <table id="previewTable">
+         <thead>
+            <tr>
+               <th>Col A</th>
+               <th>Col B</th>
+               <th>Col C</th>
+            </tr>
+         </thead>
+         <tbody id="previewTableBody"></tbody>
+      </table>
    </div>
    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
    <script>
@@ -39,6 +61,15 @@
 
       function setOptionsVisible(visible) {
          document.getElementById("options").style.display = (visible ? "block" : "none");
+      }
+
+      function setPreviewVisible(visible) {
+         document.getElementById("preview").style.display = (visible ? "block" : "none");
+      }
+
+      function clearTable() {
+         const table = document.getElementById("previewTable");
+         table.tBodies[0].innerHTML = "";
       }
    </script>
    <script>
@@ -130,6 +161,18 @@
             // 👇 parse it using D3.js
             const data = d3.csvParse(text);
 
+            // Get object for preview table
+            const previewTableBody = document.getElementById("previewTableBody");
+
+            // Add rows to preview table
+            const toShow = Math.min(data.length, 10);
+            for (let i = 0; i < toShow; i++) {
+               const row = previewTableBody.insertRow(i);
+               for (let j = 0; j < data.columns.length; j++) {
+                  row.insertCell(j).innerHTML = data[i][data.columns[j]];
+               }
+            }
+
             // Add drop-down for each field
             const options = ["Keep", "Hash and exclude", "Hash and keep"];
             data.columns.forEach(function(name) {
@@ -152,6 +195,9 @@
                // Line break
                selectsParent.appendChild(document.createElement("br"));
             });
+
+            // Show size of dataset
+            document.getElementById("previewLbl").innerHTML = "Showing " + toShow + " of " + data.length;
 
             // Show options
             setOptionsVisible(true);
