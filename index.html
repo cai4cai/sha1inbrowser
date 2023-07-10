@@ -8,7 +8,7 @@
          border: 1px solid black;
          border-collapse: collapse;
       }
-      #options {
+      #preview {
          display: none;
       }
    </style>
@@ -20,7 +20,7 @@
       <br />
       <input type="submit" value="Process" />
    </form>
-   <div id="options">
+   <div id="preview">
       <h1>Data preview</h1>
       <p id="previewLbl">Showing 0 of 0</p>
       <table id="previewTable">
@@ -52,8 +52,8 @@
          link.click();
       }
 
-      function setOptionsVisible(visible) {
-         document.getElementById("options").style.display = (visible ? "block" : "none");
+      function setPreviewVisible(visible) {
+         document.getElementById("preview").style.display = (visible ? "block" : "none");
       }
 
       function clearTable() {
@@ -99,7 +99,7 @@
          const input = csvFile.files[0];
          const reader = new FileReader();
 
-         setOptionsVisible(input != null);
+         setPreviewVisible(input != null);
          if (input == null) {
             clearTable();
             return;
