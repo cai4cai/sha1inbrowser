@@ -3,13 +3,29 @@
 <head>
    <meta charset="UTF-8">
    <title>Compute SHA-1 from CSV in browser</title>
+   <style>
+      table, th, td {
+         border: 1px solid black;
+         border-collapse: collapse;
+      }
+   </style>
 </head>
 <body>
+   <h1>Choose a CSV file</h1>
    <form id="myForm">
       <input type="file" id="csvFile" accept=".csv" />
       <br />
       <input type="submit" value="Process" />
    </form>
+   <h1>Raw data preview</h1>
+   <p id="previewLbl">Showing 0 of 0</p>
+   <table id="previewTable">
+      <tr>
+         <th>Col A</th>
+         <th>Col B</th>
+         <th>Col C</th>
+      </tr>
+   </table>
    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
    <script>
       async function sha1(str) {
@@ -56,6 +72,36 @@
 
             var csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));;
             download(csvContent, "parsedcsv.csv");
+         };
+      });
+
+      csvFile.addEventListener("change", function (e) {
+         e.preventDefault();
+         const input = csvFile.files[0];
+         const reader = new FileReader();
+
+         // 👇 executed when a file is loaded
+         reader.onload = async function (e) {
+            // 👇 get the text from CSV file
+            const text = e.target.result;
+
+            // 👇 parse it using D3.js
+            const data = d3.csvParse(text);
+
+            // Get object for preview table
+            const previewTable = document.getElementById("previewTable");
+
+            // Add rows to preview table
+            const toShow = Math.min(data.length, 10);
+            for (let i = 0; i < toShow; i++) {
+               const row = previewTable.insertRow(i + 1);
+               row.insertCell(0).innerHTML = data[i]["Col A"];
+               row.insertCell(1).innerHTML = data[i]["Col B"];
+               row.insertCell(2).innerHTML = data[i]["Col C"];
+            }
+
+            // Show size of dataset
+            document.getElementById("previewLbl").innerHTML = "Showing " + toShow + " of " + data.length;
          };
 
          // 👇 load the input file to the reader
