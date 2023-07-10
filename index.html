@@ -58,17 +58,46 @@
             // 👇 parse it using D3.js
             const data = d3.csvParse(text);
 
+            // Find what to do with each column
+            const toHash = [];
+            const toExclude = [];
+            data.columns.forEach(function(column) {
+               const value = document.getElementById("select_" + column).value;
+               switch (value) {
+                  case "Hash":
+                     toHash.push(column);
+                     break;
+                  case "Exclude":
+                     toExclude.push(column);
+                     break;
+               }
+            });
+            console.log(toHash);
+            console.log(toExclude);
+
             for (var i = 0; i < data.length; i++) {
-               stringtohash = data[i]["Col A"] + data[i]["Col B"] + data[i]["Col C"]; 
+               // Concatenate strings for hashing
+               let stringtohash = "";
+               toHash.forEach(function(column) {
+                  stringtohash += data[i][column];
+               })
+               // Hash
                console.log("Hashing: " + stringtohash);
                hash = await sha1(data[i]["Col A"]);
                console.log("SHA-1: " + hash);
 
                data[i]["Hash"] = hash;
+
+               // Delete fields in toExclude
+               toExclude.forEach(function(column) {
+                  delete data[i][column];
+               })
             }
 
+            console.log(data);
+
             var csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));;
-            download(csvContent, "parsedcsv.csv");
+            // download(csvContent, "parsedcsv.csv");
          };
 
          reader.readAsText(input);
@@ -100,12 +129,13 @@
             data.columns.forEach(function(name) {
                // Label
                const label = document.createElement("label");
-               label.for = "select" + name;
+               const id = "select_" + name;
+               label.for = id;
                label.textContent = name + ":  ";
                selectsParent.appendChild(label);
                // Select
                const select = document.createElement("select");
-               select.id = "select" + name;
+               select.id = id;
                selectsParent.appendChild(select);
                options.forEach(function(optionName) {
                   const option = document.createElement("option");
