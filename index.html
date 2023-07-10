@@ -73,6 +73,8 @@
             var csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));;
             download(csvContent, "parsedcsv.csv");
          };
+
+         reader.readAsText(input);
       });
 
       csvFile.addEventListener("change", function (e) {
