@@ -148,6 +148,8 @@
          if (input == null) {
             selectsParent.innerHTML = "";
             setOptionsVisible(false);
+            setPreviewVisible(false);
+            clearTable();
             return;
          }
 
@@ -201,6 +203,7 @@
 
             // Show options
             setOptionsVisible(true);
+            setPreviewVisible(true);
          };
 
          // 👇 load the input file to the reader
