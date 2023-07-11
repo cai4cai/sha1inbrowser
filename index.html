@@ -32,11 +32,7 @@
       <p id="previewLbl">Showing 0 of 0</p>
       <table id="previewTable">
          <thead>
-            <tr>
-               <th>Col A</th>
-               <th>Col B</th>
-               <th>Col C</th>
-            </tr>
+            <tr id="previewHeadRow"></tr>
          </thead>
          <tbody id="previewTableBody"></tbody>
       </table>
@@ -70,11 +66,18 @@
       function clearTable() {
          const table = document.getElementById("previewTable");
          table.tBodies[0].innerHTML = "";
+         const headerRow = document.getElementById("previewHeadRow");
+         headerRow.innerHTML = "";
       }
    </script>
    <script>
       const myForm = document.getElementById("myForm");
       const csvFile = document.getElementById("csvFile");
+      const table = document.getElementById("previewTable");
+
+      const hashColour = "#a3ffff"
+      const excludeColour = "#ffa6a6";
+      const stripeWidth = 6;
 
       myForm.addEventListener("submit", function (e) {
          e.preventDefault();
@@ -101,6 +104,9 @@
                      break;
                   case "Hash and exclude":
                      toHash.push(column);
+                     toExclude.push(column);
+                     break;
+                  case "Exclude":
                      toExclude.push(column);
                      break;
                }
@@ -140,6 +146,23 @@
          reader.readAsText(input);
       });
 
+      function updateSelect(e) {
+         const select = e.target;
+         let name = select.id.slice(7);
+         // Update colour of table column
+         const numCells = table.rows.length;
+         let value = select.value.toLowerCase();
+         let toHash = value.includes("hash");
+         let toExclude = value.includes("exclude");
+         for (let i = 0; i < numCells; i++) {
+            let id = `previewCell_${name}_${i}`;
+            let cell = document.getElementById(id);
+            let colour1 = toHash ? hashColour : "transparent";
+            let colour2 = toExclude ? excludeColour : "transparent";
+            cell.style.backgroundImage = `repeating-linear-gradient(58deg, ${colour1}, ${colour1} ${stripeWidth}px, ${colour2} ${stripeWidth}px, ${colour2} ${stripeWidth * 2}px)`;
+         }
+      }
+
       csvFile.addEventListener("change", function (e) {
          e.preventDefault();
          const input = csvFile.files[0];
@@ -166,17 +189,28 @@
             // Get object for preview table
             const previewTableBody = document.getElementById("previewTableBody");
 
+            // Header rows for preview
+            const headerRow = document.getElementById("previewHeadRow");
+            for (let i = 0; i < data.columns.length; i++) {
+               let cell = headerRow.insertCell(i);
+               let column = data.columns[i];
+               cell.id = `previewCell_${column}_0`;
+               cell.innerHTML = column;
+            }
+
             // Add rows to preview table
             const toShow = Math.min(data.length, 10);
             for (let i = 0; i < toShow; i++) {
                const row = previewTableBody.insertRow(i);
                for (let j = 0; j < data.columns.length; j++) {
-                  row.insertCell(j).innerHTML = data[i][data.columns[j]];
+                  let cell = row.insertCell(j);
+                  cell.id = `previewCell_${data.columns[j]}_${i + 1}`;
+                  cell.innerHTML = data[i][data.columns[j]];
                }
             }
 
             // Add drop-down for each field
-            const options = ["Keep", "Hash and exclude", "Hash and keep"];
+            const options = ["Keep", "Exclude", "Hash and exclude", "Hash and keep"];
             data.columns.forEach(function(name) {
                // Label
                const label = document.createElement("label");
@@ -187,6 +221,7 @@
                // Select
                const select = document.createElement("select");
                select.id = id;
+               select.addEventListener("change", updateSelect)
                selectsParent.appendChild(select);
                options.forEach(function(optionName) {
                   const option = document.createElement("option");
