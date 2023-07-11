@@ -17,6 +17,9 @@
       #loading {
          display: none;
       }
+      #hashing {
+         display: none;
+      }
    </style>
 </head>
 <body>
@@ -28,6 +31,9 @@
    </form>
    <div id="loading">
       <p>Loading data...</p>
+   </div>
+   <div id="hashing">
+      <p>Hashing data...</p>
    </div>
    <div id="options">
       <h1>Field options</h1>
@@ -71,6 +77,10 @@
 
       function setLoadingVisible(visible) {
          document.getElementById("loading").style.display = (visible ? "block" : "none");
+      }
+
+      function setHashingVisible(visible) {
+         document.getElementById("hashing").style.display = (visible ? "block" : "none");
       }
 
       function clearTable() {
@@ -152,10 +162,10 @@
             let originalCsvWithHash = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(dataWithHash));
             download(csvContent, "unidentifiable.csv");
             download(originalCsvWithHash, "original_with_hash.csv");
-            setLoadingVisible(false);
+            setHashingVisible(false);
          };
 
-         setLoadingVisible(true);
+         setHashingVisible(true);
          reader.readAsText(input);
       });
 
