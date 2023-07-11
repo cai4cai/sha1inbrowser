@@ -14,6 +14,9 @@
       #preview {
          display: none;
       }
+      #loading {
+         display: none;
+      }
    </style>
 </head>
 <body>
@@ -23,6 +26,9 @@
       <br />
       <input type="submit" value="Process" />
    </form>
+   <div id="loading">
+      <p>Loading data...</p>
+   </div>
    <div id="options">
       <h1>Field options</h1>
       <div id="columnBoxes"></div>
@@ -67,9 +73,14 @@
          document.getElementById("preview").style.display = (visible ? "block" : "none");
       }
 
+      function setLoadingVisible(visible) {
+         document.getElementById("loading").style.display = (visible ? "block" : "none");
+      }
+
       function clearTable() {
          const table = document.getElementById("previewTable");
          table.tBodies[0].innerHTML = "";
+         document.getElementById("columnBoxes").innerHTML = "";
       }
    </script>
    <script>
@@ -128,15 +139,17 @@
                })
             }
 
-            console.log(data);
-            console.log(dataWithHash);
+            // console.log(data);
+            // console.log(dataWithHash);
 
             let csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));
             let originalCsvWithHash = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(dataWithHash));
             download(csvContent, "unidentifiable.csv");
             download(originalCsvWithHash, "original_with_hash.csv");
+            setLoadingVisible(false);
          };
 
+         setLoadingVisible(true);
          reader.readAsText(input);
       });
 
@@ -145,11 +158,12 @@
          const input = csvFile.files[0];
          const selectsParent = document.getElementById("columnBoxes");
 
+         clearTable();
+
          if (input == null) {
             selectsParent.innerHTML = "";
             setOptionsVisible(false);
             setPreviewVisible(false);
-            clearTable();
             return;
          }
 
@@ -161,7 +175,9 @@
             const text = e.target.result;
 
             // 👇 parse it using D3.js
+            console.log("Parsing started");
             const data = d3.csvParse(text);
+            console.log("Parsing done");
 
             // Get object for preview table
             const previewTableBody = document.getElementById("previewTableBody");
@@ -171,7 +187,11 @@
             for (let i = 0; i < toShow; i++) {
                const row = previewTableBody.insertRow(i);
                for (let j = 0; j < data.columns.length; j++) {
-                  row.insertCell(j).innerHTML = data[i][data.columns[j]];
+                  let content = data[i][data.columns[j]];
+                  if (content.length > 25) {
+                     content = content.slice(0, 22).trim() + "...";
+                  }
+                  row.insertCell(j).innerHTML = content;
                }
             }
 
@@ -204,9 +224,11 @@
             // Show options
             setOptionsVisible(true);
             setPreviewVisible(true);
+            setLoadingVisible(false);
          };
 
          // 👇 load the input file to the reader
+         setLoadingVisible(true);
          reader.readAsText(input);
       });
    </script>
