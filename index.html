@@ -4,6 +4,9 @@
    <meta charset="UTF-8">
    <title>Compute SHA-1 from CSV in browser</title>
    <style>
+      #options {
+         display: none;
+      }
       table, th, td {
          border: 1px solid black;
          border-collapse: collapse;
@@ -20,6 +23,10 @@
       <br />
       <input type="submit" value="Process" />
    </form>
+   <div id="options">
+      <h1>Field options</h1>
+      <div id="columnBoxes"></div>
+   </div>
    <div id="preview">
       <h1>Data preview</h1>
       <p id="previewLbl">Showing 0 of 0</p>
@@ -52,6 +59,10 @@
          link.click();
       }
 
+      function setOptionsVisible(visible) {
+         document.getElementById("options").style.display = (visible ? "block" : "none");
+      }
+
       function setPreviewVisible(visible) {
          document.getElementById("preview").style.display = (visible ? "block" : "none");
       }
@@ -77,18 +88,53 @@
 
             // 👇 parse it using D3.js
             const data = d3.csvParse(text);
+            const dataWithHash = d3.csvParse(text);
 
-            for (var i = 0; i < data.length; i++) {
-               stringtohash = data[i]["Col A"] + data[i]["Col B"] + data[i]["Col C"]; 
-               console.log("Hashing: " + stringtohash);
-               hash = await sha1(data[i]["Col A"]);
+            // Find what to do with each column
+            const toHash = [];
+            const toExclude = [];
+            data.columns.forEach(function(column) {
+               const value = document.getElementById("select_" + column).value;
+               switch (value) {
+                  case "Hash and keep":
+                     toHash.push(column);
+                     break;
+                  case "Hash and exclude":
+                     toHash.push(column);
+                     toExclude.push(column);
+                     break;
+               }
+            });
+            console.log(toHash);
+            console.log(toExclude);
+
+            for (let i = 0; i < data.length; i++) {
+               // Concatenate strings for hashing
+               let hashKey = "";
+               toHash.forEach(function(column) {
+                  hashKey += data[i][column];
+               })
+               // Hash
+               console.log("Hashing: " + hashKey);
+               let hash = await sha1(hashKey);
                console.log("SHA-1: " + hash);
 
                data[i]["Hash"] = hash;
+               dataWithHash[i]["Hash"] = hash;
+
+               // Delete fields in toExclude
+               toExclude.forEach(function(column) {
+                  delete data[i][column];
+               })
             }
 
-            var csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));;
-            download(csvContent, "parsedcsv.csv");
+            console.log(data);
+            console.log(dataWithHash);
+
+            let csvContent = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(data));
+            let originalCsvWithHash = "data:text/csv;charset=utf-8," + encodeURI(d3.csvFormat(dataWithHash));
+            download(csvContent, "unidentifiable.csv");
+            download(originalCsvWithHash, "original_with_hash.csv");
          };
 
          reader.readAsText(input);
@@ -97,13 +143,17 @@
       csvFile.addEventListener("change", function (e) {
          e.preventDefault();
          const input = csvFile.files[0];
-         const reader = new FileReader();
+         const selectsParent = document.getElementById("columnBoxes");
 
-         setPreviewVisible(input != null);
          if (input == null) {
+            selectsParent.innerHTML = "";
+            setOptionsVisible(false);
+            setPreviewVisible(false);
             clearTable();
             return;
          }
+
+         const reader = new FileReader();
 
          // 👇 executed when a file is loaded
          reader.onload = async function (e) {
@@ -125,8 +175,35 @@
                }
             }
 
+            // Add drop-down for each field
+            const options = ["Keep", "Hash and exclude", "Hash and keep"];
+            data.columns.forEach(function(name) {
+               // Label
+               const label = document.createElement("label");
+               const id = "select_" + name;
+               label.for = id;
+               label.textContent = name + ":  ";
+               selectsParent.appendChild(label);
+               // Select
+               const select = document.createElement("select");
+               select.id = id;
+               selectsParent.appendChild(select);
+               options.forEach(function(optionName) {
+                  const option = document.createElement("option");
+                  option.value = optionName;
+                  option.text = optionName;
+                  select.appendChild(option);
+               });
+               // Line break
+               selectsParent.appendChild(document.createElement("br"));
+            });
+
             // Show size of dataset
             document.getElementById("previewLbl").innerHTML = "Showing " + toShow + " of " + data.length;
+
+            // Show options
+            setOptionsVisible(true);
+            setPreviewVisible(true);
          };
 
          // 👇 load the input file to the reader
