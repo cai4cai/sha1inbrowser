@@ -1,2 +1,2 @@
 # sha1inbrowser
-SHA1 in browser
+A web interface for using the SHA-1 hashing algorithm on CSV files. The application is completely client-side and should run in any common web browser. Open index.html in your web browser to begin. Choose a CSV file, and select which columns you wish to include in the hash and/or exclude completely. Upon pressing submit, two CSV files will be saved. One will be completely unchanged except for the addition of the hashes in a separate column. The other will also have any exclusions that you specified.
