@@ -24,7 +24,7 @@ Navigate to the [Pseudo-Anonymised ID Generator](https://cai4cai.ml/sha1inbrowse
 The application currently supports `.csv` files only. Make sure your data is saved in this format before proceeding. Select your file by clicking on `Choose File`.
 
 ### Step 3: Configure Data Columns
-Assign roles to each column in your dataset, specifying which should be hashed, excluded, or kept. Specifically, assign the NHS number column to `Hash and Exclude` and all identifiable information to `Exclude`. Relevant clinical information, but not patient identifiable, can be assigned to `Keep`. Any junk that you do not want, in the anonymised spreadsheet, can be set to `Exclude`.
+Assign roles to each column in your dataset, specifying which should be hashed, excluded, or kept. Specifically, assign the NHS number column to `Hash and Exclude` and all identifiable information to `Exclude`. Relevant clinical information, but not patient identifiable, can be assigned to `Keep`. Any junk that you do not want, in the anonymised spreadsheet, can be set to `Exclude`. Columns that you want a hashed version of, but you also want to appear in the anonymised spreadsheet can be set to `Hash`
 
 ### Step 4: Process the Data
 Click `Process` to start the local hashing. This generates two `.csv` files:
@@ -33,7 +33,7 @@ Click `Process` to start the local hashing. This generates two `.csv` files:
 
 ### Data Handling
 - **Internal Use**: Keep `original_with_hash.csv` within the NHS trust.
-- **External Sharing**: `unidentifiable.csv` can be shared with researchers at KCL, following approved ethics and data sharing agreements.
+- **External Sharing**: `unidentifiable.csv` is the anonymised spreadsheet and can be shared with researchers at KCL, following approved ethics and data sharing agreements.
 
 ## Support and Contact
 For any inquiries or support requests, please contact:
