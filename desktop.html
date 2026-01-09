@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src-elem 'self' 'unsafe-inline'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:">
+   <title>Pseudo-Anonymised ID Generator</title>
+   <link rel="icon" type="image/x-icon" href="favicon.png">
+   <style>
+      * { box-sizing: border-box; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fff; min-height: 100vh; color: #000; line-height: 1.5; padding: 40px 20px; margin: 0; }
+      .container { max-width: 800px; margin: 0 auto; }
+      #privacyNotice { color: #c00; font-weight: 600; text-align: center; margin-bottom: 30px; font-size: 14px; }
+      h1 { font-size: 24px; font-weight: 600; margin-bottom: 30px; text-align: center; }
+      h2 { font-size: 16px; font-weight: 600; margin-bottom: 15px; border-bottom: 1px solid #000; padding-bottom: 8px; }
+      .card { margin-bottom: 30px; }
+      .upload-area { border: 1px dashed #999; padding: 30px; text-align: center; cursor: pointer; }
+      .upload-area:hover { border-color: #000; }
+      .upload-text { font-size: 14px; color: #666; }
+      .file-name { font-weight: 500; margin-top: 10px; }
+      .btn { background: #000; color: #fff; border: none; padding: 10px 24px; font-size: 14px; cursor: pointer; }
+      .btn:hover { background: #333; }
+      .btn:disabled { background: #ccc; cursor: not-allowed; }
+      .btn-process { width: 100%; margin-top: 20px; padding: 12px; }
+      .column-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+      .column-option { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+      .column-option label { font-size: 14px; }
+      select { background: #fff; border: 1px solid #000; padding: 6px 10px; font-size: 14px; cursor: pointer; }
+      select:focus { outline: none; }
+      table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+      th, td { padding: 8px 12px; text-align: left; border: 1px solid #ddd; }
+      th { background: #f5f5f5; font-weight: 600; }
+      .preview-label { color: #666; font-size: 13px; }
+      .table-container { overflow-x: auto; }
+      #hashInputContainer { display: flex; flex-direction: column; gap: 10px; }
+      .hash-input-row { display: flex; gap: 10px; }
+      input[type="text"] { flex: 1; border: 1px solid #000; padding: 10px; font-size: 14px; }
+      input[type="text"]:focus { outline: none; }
+      #hashOutput { font-family: monospace; background: #f5f5f5; padding: 10px; font-size: 13px; min-height: 38px; }
+      .loading-indicator { text-align: center; padding: 20px; color: #666; display: none; }
+      footer { text-align: center; padding: 30px 0; color: #666; font-size: 13px; border-top: 1px solid #eee; margin-top: 30px; }
+      footer a { color: #000; text-decoration: none; }
+      footer a:hover { text-decoration: underline; }
+      input[type="file"] { display: none; }
+      #options, #preview { display: none; }
+   </style>
+</head>
+<body>
+   <div class="container">
+      <div id="privacyNotice">All processing is done locally. No data leaves your device.</div>
+      <h1>Pseudo-Anonymised ID Generator</h1>
+      <div class="card">
+         <form id="myForm">
+            <div class="upload-area" id="uploadArea">
+               <div class="upload-text">Drop CSV file here or click to browse</div>
+               <input type="file" id="csvFile" accept=".csv">
+               <div class="file-name" id="fileName"></div>
+            </div>
+            <div id="loading" class="loading-indicator">Loading...</div>
+            <div id="hashing" class="loading-indicator">Processing...</div>
+            <button type="submit" class="btn btn-process" id="processBtn" disabled>Process and Download</button>
+         </form>
+      </div>
+      <div id="options" class="card">
+         <h2>Column Options</h2>
+         <div id="columnBoxes" class="column-options"></div>
+      </div>
+      <div id="preview" class="card">
+         <h2>Data Preview</h2>
+         <p id="previewLbl" class="preview-label">Showing 0 of 0 rows</p>
+         <div class="table-container">
+            <table id="previewTable"><thead><tr id="previewHeadRow"></tr></thead><tbody id="previewTableBody"></tbody></table>
+         </div>
+      </div>
+      <div class="card" id="hashInputContainer">
+         <h2>Quick Hash Tool</h2>
+         <div class="hash-input-row">
+            <input type="text" id="hashInput" placeholder="Enter text to hash...">
+            <button class="btn" id="hashBtn">Hash</button>
+         </div>
+         <div id="hashOutput"></div>
+      </div>
+      <footer>
+         <a href="https://github.com/cai4cai/sha1inbrowser/blob/main/README.md">Instructions</a> &middot;
+         <a href="https://cai4cai.ml/terms/">Terms</a> &middot;
+         <a href="https://cai4cai.ml/privacy/">Privacy</a> &middot;
+         <a href="https://github.com/cai4cai/sha1inbrowser">GitHub</a>
+      </footer>
+   </div>
+
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+   <script>
+      async function sha1(str) {
+         const enc = new TextEncoder();
+         const hash = await crypto.subtle.digest('SHA-1', enc.encode(str));
+         return Array.from(new Uint8Array(hash)).map(v => v.toString(16).padStart(2, '0')).join('').slice(0, 10);
+      }
+
+      const csvFile = document.getElementById("csvFile");
+      const table = document.getElementById("previewTable");
+      const uploadArea = document.getElementById("uploadArea");
+      const processBtn = document.getElementById("processBtn");
+      const fileNameDisplay = document.getElementById("fileName");
+      const hashColour = "#e0e0e0", excludeColour = "#999", stripeWidth = 6;
+
+      document.getElementById("hashBtn").onclick = async () => {
+         document.getElementById("hashOutput").innerText = "Hash: " + await sha1(document.getElementById("hashInput").value);
+      };
+
+      uploadArea.onclick = () => csvFile.click();
+      uploadArea.ondragover = e => { e.preventDefault(); uploadArea.style.borderColor = "#000"; };
+      uploadArea.ondragleave = () => uploadArea.style.borderColor = "#999";
+      uploadArea.ondrop = e => {
+         e.preventDefault();
+         uploadArea.style.borderColor = "#999";
+         if (e.dataTransfer.files[0]?.name.endsWith('.csv')) {
+            csvFile.files = e.dataTransfer.files;
+            csvFile.dispatchEvent(new Event('change'));
+         }
+      };
+
+      document.getElementById("myForm").onsubmit = async e => {
+         e.preventDefault();
+         document.getElementById("hashing").style.display = "block";
+         const text = await csvFile.files[0].text();
+         const data = d3.csvParse(text), dataWithHash = d3.csvParse(text);
+         const toHash = [], toHashAndExclude = [], toExclude = [];
+
+         data.columns.forEach(col => {
+            const val = document.getElementById("select_" + col).value;
+            if (val === "Hash") toHash.push(col);
+            else if (val === "Hash and exclude") toHashAndExclude.push(col);
+            else if (val === "Exclude") toExclude.push(col);
+         });
+
+         for (let i = 0; i < data.length; i++) {
+            for (const col of toHash) { const h = await sha1(data[i][col]); data[i][col + "_hash"] = h; dataWithHash[i][col + "_hash"] = h; }
+            for (const col of toHashAndExclude) { const h = await sha1(data[i][col]); data[i][col + "_hash"] = h; dataWithHash[i][col + "_hash"] = h; }
+            toExclude.concat(toHashAndExclude).forEach(col => delete data[i][col]);
+         }
+
+         await window.electronAPI.saveFile(d3.csvFormat(data), "unidentifiable.csv");
+         await window.electronAPI.saveFile(d3.csvFormat(dataWithHash), "original_with_hash.csv");
+         document.getElementById("hashing").style.display = "none";
+      };
+
+      csvFile.onchange = async () => {
+         const input = csvFile.files[0];
+         table.tBodies[0].innerHTML = "";
+         document.getElementById("previewHeadRow").innerHTML = "";
+         document.getElementById("columnBoxes").innerHTML = "";
+
+         if (!input) {
+            document.getElementById("options").style.display = "none";
+            document.getElementById("preview").style.display = "none";
+            processBtn.disabled = true;
+            fileNameDisplay.textContent = "";
+            return;
+         }
+
+         fileNameDisplay.textContent = input.name;
+         document.getElementById("loading").style.display = "block";
+
+         const data = d3.csvParse(await input.text());
+         const header = document.getElementById("previewHeadRow");
+         data.columns.forEach((col, i) => { const c = header.insertCell(i); c.id = "cell_" + col + "_0"; c.innerHTML = col; });
+
+         const toShow = Math.min(data.length, 10);
+         for (let i = 0; i < toShow; i++) {
+            const row = table.tBodies[0].insertRow(i);
+            data.columns.forEach((col, j) => {
+               let content = data[i][col];
+               if (content.length > 25) content = content.slice(0, 22).trim() + "...";
+               const c = row.insertCell(j); c.id = "cell_" + col + "_" + (i + 1); c.innerHTML = content;
+            });
+         }
+
+         const parent = document.getElementById("columnBoxes");
+         data.columns.forEach(name => {
+            const wrapper = document.createElement("div"); wrapper.className = "column-option";
+            const label = document.createElement("label"); label.textContent = name;
+            const select = document.createElement("select"); select.id = "select_" + name;
+            ["Keep", "Exclude", "Hash", "Hash and exclude"].forEach(opt => { const o = document.createElement("option"); o.value = o.text = opt; select.appendChild(o); });
+            select.onchange = () => {
+               const val = select.value.toLowerCase(), toHash = val.includes("hash"), toExclude = val.includes("exclude");
+               for (let i = 0; i < table.rows.length; i++) {
+                  const cell = document.getElementById("cell_" + name + "_" + i);
+                  cell.style.backgroundImage = `repeating-linear-gradient(58deg, ${toHash ? hashColour : "transparent"}, ${toHash ? hashColour : "transparent"} ${stripeWidth}px, ${toExclude ? excludeColour : "transparent"} ${stripeWidth}px, ${toExclude ? excludeColour : "transparent"} ${stripeWidth * 2}px)`;
+               }
+            };
+            wrapper.append(label, select); parent.appendChild(wrapper);
+         });
+
+         document.getElementById("previewLbl").innerHTML = `Showing ${toShow} of ${data.length} rows`;
+         document.getElementById("options").style.display = "block";
+         document.getElementById("preview").style.display = "block";
+         document.getElementById("loading").style.display = "none";
+         processBtn.disabled = false;
+      };
+   </script>
+</body>
+</html>

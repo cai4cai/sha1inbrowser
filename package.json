@@ -1,0 +1,63 @@
+{
+  "name": "pseudo-anonymised-id-generator",
+  "version": "1.0.0",
+  "description": "Desktop application for generating pseudo-anonymised IDs using SHA-1 hashing",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --win --mac --linux"
+  },
+  "author": {
+    "name": "cai4cai",
+    "email": "cai4cai@users.noreply.github.com"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.cai4cai.sha1inbrowser",
+    "productName": "Pseudo-Anonymised ID Generator",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "desktop.html",
+      "favicon.png",
+      "node_modules/d3/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "favicon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "favicon.png",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "favicon.png",
+      "category": "Utility"
+    }
+  },
+  "dependencies": {
+    "d3": "^7.9.0"
+  }
+}
